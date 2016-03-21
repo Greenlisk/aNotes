@@ -4,16 +4,19 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
-import java.util.zip.Inflater;
 
 
-public class ActiveNotesFragment extends Fragment {
+public class ActiveNotesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     private final int LOADER_ID = 1;
     private ActiveNotesAdapter activeNotesAdapter;
 
@@ -26,7 +29,10 @@ public class ActiveNotesFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_active_notes, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_active_notes, container, false);
+        ListView listView = (ListView) rootView.findViewById(R.id.list_active_notes);
+        listView.setAdapter();
+        return rootView;
     }
 
 
@@ -34,6 +40,35 @@ public class ActiveNotesFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
+    }
+
+    private class NotesLoader extends CursorLoader {
+        public NotesLoader(Context context) {
+            super(context);
+        }
+
+        @Override
+        public Cursor loadInBackground() {
+
+            return null;
+        }
+
+
     }
 
     static class ViewHolder {
