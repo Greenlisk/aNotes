@@ -7,18 +7,26 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.CursorAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.example.green.anotes.data.NotesContract;
+import com.example.green.anotes.data.NotesDBHelper;
 
 
 public class ActiveNotesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+    private final String LOG_TAG = "ActiveNotesFragment";
     private final int LOADER_ID = 1;
     private ActiveNotesAdapter activeNotesAdapter;
+    private NotesDBHelper dbHelper ;
 
     public ActiveNotesFragment() {
         // Required empty public constructor
@@ -29,9 +37,19 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        dbHelper = new NotesDBHelper(getContext());
+        ActiveNotesAdapter adapter = new ActiveNotesAdapter(getContext());
         View rootView = inflater.inflate(R.layout.fragment_active_notes, container, false);
         ListView listView = (ListView) rootView.findViewById(R.id.list_active_notes);
-        listView.setAdapter();
+        listView.setAdapter(adapter);
+        EditText editText = (EditText) rootView.findViewById(R.id.edit_text);
+        editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                Log.v(LOG_TAG, "Action: " + actionId);
+                return false;
+            }
+        });
         return rootView;
     }
 
@@ -44,7 +62,7 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return null;
+        return new NotesLoader(getContext());
     }
 
     @Override
@@ -64,8 +82,15 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
         @Override
         public Cursor loadInBackground() {
-
-            return null;
+            return dbHelper.getReadableDatabase().query(
+                    NotesContract.NoteEntry.TABLE_NAME,
+                    new String[]{NotesContract.NoteEntry._ID, NotesContract.NoteEntry.NOTE},
+                    NotesContract.NoteEntry.REMOVED + " > 0 ",
+                    null,
+                    null,
+                    null,
+                    null
+            );
         }
 
 

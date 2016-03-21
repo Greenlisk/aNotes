@@ -10,7 +10,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class NotesDBHelper extends SQLiteOpenHelper {
     private static final int DATABASE_VERSION = 1;
 
-    NotesDBHelper(Context context) {
+    public NotesDBHelper(Context context) {
         super(context, NotesContract.NoteEntry.TABLE_NAME, null, DATABASE_VERSION);
 
     }
