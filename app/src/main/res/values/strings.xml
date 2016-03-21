@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">aNotes</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_archive">ArchiveActivity</string>
+    <string name="action_settings">Settings</string>
 </resources>
