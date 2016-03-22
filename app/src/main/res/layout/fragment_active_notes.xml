@@ -10,6 +10,7 @@
         android:layout_width="match_parent"
         android:id="@+id/list_active_notes"
         android:layout_weight="1"
+        android:dividerHeight="5dp"
         />
 
     <LinearLayout

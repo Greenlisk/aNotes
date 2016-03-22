@@ -2,9 +2,13 @@
     <string name="app_name">aNotes</string>
 
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="title_activity_archive">ArchiveActivity</string>
-    <string name="action_settings">Settings</string>
+    <string name="title_activity_archive">Archive</string>
+    <string name="title_activity_main">Notes</string>>
     <string name="note_hint">Note text...</string>>
-    <string name="save_note">Save</string>>
+    <string name="save_note">Save</string>
+    <string name="action_delete">Delete notes</string>
+    <string name="action_archive">Archive</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
