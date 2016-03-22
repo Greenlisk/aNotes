@@ -1,20 +1,22 @@
 package com.example.green.anotes;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.EditorInfo;
+
 import android.widget.CursorAdapter;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -22,12 +24,14 @@ import com.example.green.anotes.data.NotesContract;
 import com.example.green.anotes.data.NotesDBHelper;
 
 
+
 public class ActiveNotesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     private final String LOG_TAG = "ActiveNotesFragment";
     private final int LOADER_ID = 1;
     private ActiveNotesAdapter activeNotesAdapter;
-    private NotesDBHelper dbHelper ;
-
+    private NotesDBHelper dbHelper;
+    ListView listView;
+    EditText editText;
     public ActiveNotesFragment() {
         // Required empty public constructor
     }
@@ -38,19 +42,51 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         dbHelper = new NotesDBHelper(getContext());
-        ActiveNotesAdapter adapter = new ActiveNotesAdapter(getContext());
-        View rootView = inflater.inflate(R.layout.fragment_active_notes, container, false);
-        ListView listView = (ListView) rootView.findViewById(R.id.list_active_notes);
-        listView.setAdapter(adapter);
-        EditText editText = (EditText) rootView.findViewById(R.id.edit_text);
-        editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                Log.v(LOG_TAG, "Action: " + actionId);
-                return false;
-            }
-        });
+        activeNotesAdapter = new ActiveNotesAdapter(getContext());
+        final View rootView = inflater.inflate(R.layout.fragment_active_notes, container, false);
+        listView = (ListView) rootView.findViewById(R.id.list_active_notes);
+        listView.setAdapter(activeNotesAdapter);
+        ImageButton imageButton = (ImageButton)rootView.findViewById(R.id.save_button);
+        imageButton.setOnClickListener(new OnSave());
+        editText = (EditText)rootView.findViewById(R.id.edit_text);
+        getLoaderManager().initLoader(LOADER_ID, null, this);
         return rootView;
+    }
+
+    private class OnSave implements View.OnClickListener{
+        @Override
+        public void onClick(View v) {
+            String text = editText.getText().toString();
+            if (!text.isEmpty()) {
+                new DBWriter().execute(text);
+            }
+
+        }
+    }
+
+    private class DBWriter extends AsyncTask<String, Void, Boolean>{
+        @Override
+        protected Boolean doInBackground(String... params) {
+            ContentValues cv = new ContentValues();
+            cv.put(NotesContract.NoteEntry.NOTE, params[0]);
+            cv.put(NotesContract.NoteEntry.REMOVED, 0);
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            return -1 != db.insert(NotesContract.NoteEntry.TABLE_NAME,null, cv);
+
+        }
+
+        @Override
+        protected void onPostExecute(Boolean res) {
+            if(res){
+                String text = editText.getText().toString();
+                View view = LayoutInflater.from(getContext()).inflate(R.layout.list_item_active_notes, listView, false);
+                TextView textView = (TextView)view.findViewById(R.id.note_field);
+                textView.setText(text);
+                listView.addFooterView(view);
+                editText.setText("");
+                listView.setSelection(listView.getCount());
+            }
+        }
     }
 
 
@@ -62,12 +98,12 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return new NotesLoader(getContext());
+        return new NotesLoader(getContext(), dbHelper);
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-
+        activeNotesAdapter.changeCursor(data);
     }
 
     @Override
@@ -75,9 +111,11 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
     }
 
-    private class NotesLoader extends CursorLoader {
-        public NotesLoader(Context context) {
+    private static class NotesLoader extends CursorLoader {
+        NotesDBHelper dbHelper;
+        public NotesLoader(Context context, NotesDBHelper dbHelper) {
             super(context);
+            this.dbHelper = dbHelper;
         }
 
         @Override
@@ -85,7 +123,7 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
             return dbHelper.getReadableDatabase().query(
                     NotesContract.NoteEntry.TABLE_NAME,
                     new String[]{NotesContract.NoteEntry._ID, NotesContract.NoteEntry.NOTE},
-                    NotesContract.NoteEntry.REMOVED + " > 0 ",
+                    NotesContract.NoteEntry.REMOVED + " == 0 ",
                     null,
                     null,
                     null,

@@ -6,21 +6,33 @@
     tools:context="com.example.green.anotes.ActiveNotesFragment">
 
     <ListView
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:layout_width="match_parent"
         android:id="@+id/list_active_notes"
         android:layout_weight="1"
         />
 
-
-    <EditText
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:hint="@string/note_hint"
-        android:imeActionLabel="@string/save_note"
-        android:id="@+id/edit_text"
-        android:layout_weight="0"
-        />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <EditText
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:hint="@string/note_hint"
+            android:id="@+id/edit_text"
+            android:inputType="textMultiLine"
+            android:imeOptions="flagNoExtractUi"
+            android:background="@android:drawable/editbox_background_normal"
+            />
 
-
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/save_button"
+            android:src="@android:drawable/ic_menu_send"
+            android:contentDescription="Send"
+            />
+    </LinearLayout>
 </LinearLayout>
