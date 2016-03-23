@@ -1,5 +1,6 @@
 package com.example.green.anotes;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +12,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -58,10 +60,23 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
         return rootView;
     }
 
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 0 && resultCode == Activity.RESULT_OK) {
+            Log.v(LOG_TAG, "Activity Resulted!!!");
+            activeNotesAdapter.notifyDataSetChanged();
+            getLoaderManager().restartLoader(LOADER_ID, null, this);
+        }
+    }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.menu_archive, menu);
     }
+
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -71,7 +86,7 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
             startActivity(intent);
         } else {
             Intent intent = new Intent(getContext(), DeletionActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, 0);
         }
         return true;
     }
@@ -122,6 +137,7 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Log.v(LOG_TAG, "Creating!!!!!");
         return new NotesLoader(getContext(), dbHelper);
     }
 
@@ -132,6 +148,9 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
+        Log.v(LOG_TAG, "Refreahing!!!!");
+        activeNotesAdapter.changeCursor(null);
+
 
     }
 

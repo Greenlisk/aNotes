@@ -10,4 +10,16 @@
         android:id="@+id/note_field"
         android:layout_weight="1"/>
 
+    <FrameLayout
+        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:layout_weight="0">
+        <CheckBox
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:id="@+id/delete_check_box"
+            android:layout_gravity="center"
+            android:checked="false"/>
+    </FrameLayout>
+
 </LinearLayout>

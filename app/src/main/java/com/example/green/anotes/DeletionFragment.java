@@ -1,5 +1,6 @@
 package com.example.green.anotes;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -10,21 +11,23 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.util.Pair;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
+import android.widget.CheckBox;
 import android.widget.CursorAdapter;
-import android.widget.ImageButton;
-import android.widget.ImageView;
+
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.green.anotes.data.NotesContract;
 import com.example.green.anotes.data.NotesDBHelper;
-
-import java.util.ArrayList;
+import java.util.HashMap;
 
 
 
@@ -33,8 +36,7 @@ public class DeletionFragment extends Fragment implements LoaderManager.LoaderCa
     private final int LOADER_ID = 2;
     private NotesDBHelper dbHelper;
     private DeletingNotesAdapter deletingNotesAdapter;
-    private ListView listView;
-    private int positionToDel;
+    HashMap<Integer, Boolean> notesIds = new HashMap<>();
 
     public DeletionFragment() {
 
@@ -47,39 +49,60 @@ public class DeletionFragment extends Fragment implements LoaderManager.LoaderCa
         View rootView = inflater.inflate(R.layout.fragment_deletion, container, false);
         dbHelper = new NotesDBHelper(getContext());
         deletingNotesAdapter = new DeletingNotesAdapter(getContext());
-        listView = (ListView)rootView.findViewById(R.id.deletion_list);
+        ListView listView = (ListView)rootView.findViewById(R.id.deletion_list);
         listView.setAdapter(deletingNotesAdapter);
-        listView.setOnItemClickListener(new NoteListener());
         getLoaderManager().initLoader(LOADER_ID, null, this);
+        setHasOptionsMenu(true);
         return rootView;
     }
 
-    private class NoteListener implements ListView.OnItemClickListener {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            positionToDel = position;
-            Log.v(LOG_TAG, "Item clicked");
-            new DBWriter().execute(parent.getAdapter().getItemId(position));
-        }
+    @Override
+    public void onStart() {
+        super.onStart();
+        getLoaderManager().restartLoader(LOADER_ID, null, this);
     }
 
-    private class DBWriter extends AsyncTask<Long, Void, Boolean> {
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_deletion,menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_done) {
+            new DBWriter().execute();
+        }
+        return true;
+    }
+
+    private class DBWriter extends AsyncTask<Void, Void, Boolean> {
         @Override
-        protected Boolean doInBackground(Long... params) {
+        protected Boolean doInBackground(Void... params) {
+            Boolean result = true;
             ContentValues cv = new ContentValues();
             cv.put(NotesContract.NoteEntry.REMOVED, 1);
             SQLiteDatabase db = dbHelper.getWritableDatabase();
-            return 0 < db.update(NotesContract.NoteEntry.TABLE_NAME,
-                    cv,
-                    NotesContract.NoteEntry._ID + " == ? ",
-                    new String[]{Long.toString(params[0])});
+
+            for (HashMap.Entry<Integer,Boolean> entry : notesIds.entrySet()){
+                Log.v(LOG_TAG, "Key: " + entry.getKey() + " Value: " + entry.getValue());
+                if(entry.getValue()) {
+                    Log.v(LOG_TAG, "Entry:" + entry.getValue() + " " + entry.getKey());
+                    result = 1 == db.update(NotesContract.NoteEntry.TABLE_NAME,
+                            cv,
+                            NotesContract.NoteEntry._ID + " == ? ",
+                            new String[]{entry.getKey().toString()});
+                }
+            }
+
+            return result;
 
         }
 
         @Override
         protected void onPostExecute(Boolean res) {
             if(res) {
-                listView.removeViewAt(positionToDel);
+                getActivity().setResult(Activity.RESULT_OK);
+                getActivity().finish();
             }
         }
     }
@@ -104,7 +127,7 @@ public class DeletionFragment extends Fragment implements LoaderManager.LoaderCa
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-
+        deletingNotesAdapter.changeCursor(null);
     }
 
     private static class NotesLoader extends CursorLoader {
@@ -130,27 +153,32 @@ public class DeletionFragment extends Fragment implements LoaderManager.LoaderCa
 
     }
 
-    static class ViewHolder {
+
+
+    private class ViewHolder {
         public TextView textView;
-        public ImageView imageButton;
+        public CheckBox checkBox;
+        public Integer id;
 
         public ViewHolder(View parent) {
             textView = (TextView)parent.findViewById(R.id.note_field);
-            imageButton = (ImageView)parent.findViewById(R.id.delete_button);
+
+            checkBox = (CheckBox)parent.findViewById(R.id.delete_check_box);
+
         }
     }
 
     private class DeletingNotesAdapter extends CursorAdapter {
-        ArrayList<Integer> notesIds = new ArrayList<>();
+
         public DeletingNotesAdapter(Context context) {
             super(context, null, 0);
         }
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
+            Log.v(LOG_TAG, "New View.....");
             View view = LayoutInflater.from(context).inflate(
-                    R.layout.list_item_notes, parent, false);
+                    R.layout.list_item_delete, parent, false);
             ViewHolder viewHolder = new ViewHolder(view);
             view.setTag(viewHolder);
             return view;
@@ -158,15 +186,42 @@ public class DeletionFragment extends Fragment implements LoaderManager.LoaderCa
 
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
+            Log.v(LOG_TAG, "Bind View.....");
             ViewHolder viewHolder =(ViewHolder)view.getTag();
 
             viewHolder.textView.setText(cursor.getString(1));
-            viewHolder.imageButton.setVisibility(View.VISIBLE);
+            Log.v(LOG_TAG, "ID: " + cursor.getInt(0));
+            viewHolder.id = cursor.getInt(0);
+            Boolean id = notesIds.get(cursor.getInt(0));
+            if( id != null){
+                Log.v(LOG_TAG, "Setting " + cursor.getInt(0) + " as " + id);
+                viewHolder.checkBox.setChecked(id);
 
-            notesIds.add(cursor.getInt(0));
+            } else {
+                viewHolder.checkBox.setChecked(false);
+                notesIds.put(viewHolder.id, false);
+            }
+            viewHolder.checkBox.setOnClickListener(new CheckDeleteListener());
+
 
         }
+    }
 
+    private class CheckDeleteListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            View frame = (View)v.getParent();
+            View item = (View)frame.getParent();
+            ViewHolder viewHolder = (ViewHolder)item.getTag();
+
+            Log.v(LOG_TAG, "ChosenID: " + viewHolder.id);
+            Boolean check = notesIds.get(viewHolder.id);
+            if(check) {
+                notesIds.put(viewHolder.id, false);
+            } else {
+                notesIds.put(viewHolder.id, true);
+            }
+        }
     }
 
 
