@@ -32,12 +32,13 @@ import com.example.green.anotes.data.NotesDBHelper;
 
 
 public class ActiveNotesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
-    private final String LOG_TAG = "ActiveNotesFragment";
+    private final static String LOG_TAG = "ActiveNotesFragment";
     private final int LOADER_ID = 1;
     private ActiveNotesAdapter activeNotesAdapter;
     private NotesDBHelper dbHelper;
     ListView listView;
     EditText editText;
+    ActiveNotesFragment fragment = this;
     public ActiveNotesFragment() {
         // Required empty public constructor
     }
@@ -48,10 +49,9 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         dbHelper = new NotesDBHelper(getContext());
-        activeNotesAdapter = new ActiveNotesAdapter(getContext());
         final View rootView = inflater.inflate(R.layout.fragment_active_notes, container, false);
         listView = (ListView) rootView.findViewById(R.id.list_active_notes);
-        listView.setAdapter(activeNotesAdapter);
+        listView.setAdapter(new ActiveNotesAdapter(getContext()));
         ImageButton imageButton = (ImageButton)rootView.findViewById(R.id.save_button);
         imageButton.setOnClickListener(new OnSave());
         editText = (EditText)rootView.findViewById(R.id.edit_text);
@@ -66,7 +66,6 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 0 && resultCode == Activity.RESULT_OK) {
             Log.v(LOG_TAG, "Activity Resulted!!!");
-            activeNotesAdapter.notifyDataSetChanged();
             getLoaderManager().restartLoader(LOADER_ID, null, this);
         }
     }
@@ -102,6 +101,7 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
         }
     }
 
+
     private class DBWriter extends AsyncTask<String, Void, Boolean>{
         @Override
         protected Boolean doInBackground(String... params) {
@@ -120,9 +120,8 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
                 View view = LayoutInflater.from(getContext()).inflate(R.layout.list_item_notes, listView, false);
                 TextView textView = (TextView)view.findViewById(R.id.note_field);
                 textView.setText(text);
-                listView.addFooterView(view);
                 editText.setText("");
-                listView.setSelection(listView.getCount());
+                getLoaderManager().restartLoader(LOADER_ID, null, fragment);
             }
         }
     }
@@ -143,15 +142,19 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        activeNotesAdapter.changeCursor(data);
+        Log.v(LOG_TAG, "LoadFinished!!!");
+        ActiveNotesAdapter ana = (ActiveNotesAdapter)listView.getAdapter();
+        ana.changeCursor(data);
+        Log.v(LOG_TAG, "Setting cursor size = " + data.getCount());
+        Log.v(LOG_TAG, "But cursor size is: " + listView.getAdapter().getCount());
+
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        Log.v(LOG_TAG, "Refreahing!!!!");
-        activeNotesAdapter.changeCursor(null);
-
-
+        Log.v(LOG_TAG, "Refreshing!!!!");
+        ActiveNotesAdapter ana = (ActiveNotesAdapter)listView.getAdapter();
+        ana.changeCursor(null);
     }
 
     private static class NotesLoader extends CursorLoader {
@@ -163,27 +166,28 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
         @Override
         public Cursor loadInBackground() {
-            return dbHelper.getReadableDatabase().query(
+            Cursor cursor = dbHelper.getReadableDatabase().query(
                     NotesContract.NoteEntry.TABLE_NAME,
-                    new String[]{NotesContract.NoteEntry._ID, NotesContract.NoteEntry.NOTE},
+                    new String[]{NotesContract.NoteEntry._ID, NotesContract.NoteEntry.NOTE, NotesContract.NoteEntry.REMOVED},
                     NotesContract.NoteEntry.REMOVED + " == 0 ",
                     null,
                     null,
                     null,
                     null
             );
+
+            if(cursor.moveToFirst()) {
+                do {
+                    Log.v(LOG_TAG, cursor.getString(0) + " " + cursor.getString(1) + " " + cursor.getString(2));
+
+                } while (cursor.moveToNext());
+            }
+            return cursor;
         }
 
 
     }
 
-    static class ViewHolder {
-        public TextView textView;
-
-        public ViewHolder(View parent) {
-            textView = (TextView)parent.findViewById(R.id.note_field);
-        }
-    }
 
     private class ActiveNotesAdapter extends CursorAdapter{
 
@@ -196,16 +200,15 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
             View view = LayoutInflater.from(context).inflate(
                     R.layout.list_item_notes, parent, false);
-            ViewHolder viewHolder = new ViewHolder(view);
-            view.setTag(viewHolder);
             return view;
         }
 
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
-            ViewHolder viewHolder =(ViewHolder)view.getTag();
+            TextView textView = (TextView) view.findViewById(R.id.note_field);
 
-            viewHolder.textView.setText(cursor.getString(1));
+            textView.setText(cursor.getString(1));
+            Log.v(LOG_TAG, cursor.getString(0) + " " + cursor.getString(1) + " " + cursor.getString(2));
 
         }
     }
