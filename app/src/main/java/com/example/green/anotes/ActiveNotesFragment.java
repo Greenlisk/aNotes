@@ -12,6 +12,9 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -20,12 +23,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ListView;
 import android.widget.TextView;
 
+import com.example.green.anotes.adapter.RecyclerCursorAdapter;
 import com.example.green.anotes.data.NotesContract;
 import com.example.green.anotes.data.NotesDBHelper;
 
@@ -34,12 +36,14 @@ import com.example.green.anotes.data.NotesDBHelper;
 public class ActiveNotesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     private final static String LOG_TAG = "ActiveNotesFragment";
     private final int LOADER_ID = 1;
-    private ActiveNotesAdapter activeNotesAdapter;
+    private RecyclerCursorAdapter activeNotesAdapter;
     private NotesDBHelper dbHelper;
-    ListView listView;
+    RecyclerView listView;
     EditText editText;
     ActiveNotesFragment fragment = this;
+
     public ActiveNotesFragment() {
+
         // Required empty public constructor
     }
 
@@ -50,8 +54,14 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
         // Inflate the layout for this fragment
         dbHelper = new NotesDBHelper(getContext());
         final View rootView = inflater.inflate(R.layout.fragment_active_notes, container, false);
-        listView = (ListView) rootView.findViewById(R.id.list_active_notes);
-        listView.setAdapter(new ActiveNotesAdapter(getContext()));
+        listView = (RecyclerView) rootView.findViewById(R.id.list_active_notes);
+        activeNotesAdapter = new RecyclerCursorAdapter();
+
+        listView.setAdapter(activeNotesAdapter);
+        listView.setLayoutManager(new LinearLayoutManager(getContext()));
+        RecyclerView.ItemAnimator animator = new DefaultItemAnimator();
+        listView.setItemAnimator(animator);
+
         ImageButton imageButton = (ImageButton)rootView.findViewById(R.id.save_button);
         imageButton.setOnClickListener(new OnSave());
         editText = (EditText)rootView.findViewById(R.id.edit_text);
@@ -116,10 +126,6 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
         @Override
         protected void onPostExecute(Boolean res) {
             if(res){
-                String text = editText.getText().toString();
-                View view = LayoutInflater.from(getContext()).inflate(R.layout.list_item_notes, listView, false);
-                TextView textView = (TextView)view.findViewById(R.id.note_field);
-                textView.setText(text);
                 editText.setText("");
                 getLoaderManager().restartLoader(LOADER_ID, null, fragment);
             }
@@ -136,25 +142,21 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        Log.v(LOG_TAG, "Creating!!!!!");
+        Log.v(LOG_TAG, "Creating loader...");
         return new NotesLoader(getContext(), dbHelper);
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        Log.v(LOG_TAG, "LoadFinished!!!");
-        ActiveNotesAdapter ana = (ActiveNotesAdapter)listView.getAdapter();
-        ana.changeCursor(data);
-        Log.v(LOG_TAG, "Setting cursor size = " + data.getCount());
-        Log.v(LOG_TAG, "But cursor size is: " + listView.getAdapter().getCount());
+        Log.v(LOG_TAG, "Load finished...");
+        activeNotesAdapter.swapCursor(data);
 
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        Log.v(LOG_TAG, "Refreshing!!!!");
-        ActiveNotesAdapter ana = (ActiveNotesAdapter)listView.getAdapter();
-        ana.changeCursor(null);
+        Log.v(LOG_TAG, "Reseting Loader...");
+        activeNotesAdapter.swapCursor(null);
     }
 
     private static class NotesLoader extends CursorLoader {
@@ -168,7 +170,7 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
         public Cursor loadInBackground() {
             Cursor cursor = dbHelper.getReadableDatabase().query(
                     NotesContract.NoteEntry.TABLE_NAME,
-                    new String[]{NotesContract.NoteEntry._ID, NotesContract.NoteEntry.NOTE, NotesContract.NoteEntry.REMOVED},
+                    new String[]{NotesContract.NoteEntry._ID, NotesContract.NoteEntry.NOTE, NotesContract.NoteEntry.DATE, NotesContract.NoteEntry.REMOVED},
                     NotesContract.NoteEntry.REMOVED + " == 0 ",
                     null,
                     null,
@@ -188,30 +190,6 @@ public class ActiveNotesFragment extends Fragment implements LoaderManager.Loade
 
     }
 
-
-    private class ActiveNotesAdapter extends CursorAdapter{
-
-        public ActiveNotesAdapter(Context context) {
-            super(context, null, 0);
-        }
-
-        @Override
-        public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
-            View view = LayoutInflater.from(context).inflate(
-                    R.layout.list_item_notes, parent, false);
-            return view;
-        }
-
-        @Override
-        public void bindView(View view, Context context, Cursor cursor) {
-            TextView textView = (TextView) view.findViewById(R.id.note_field);
-
-            textView.setText(cursor.getString(1));
-            Log.v(LOG_TAG, cursor.getString(0) + " " + cursor.getString(1) + " " + cursor.getString(2));
-
-        }
-    }
 
 
 }

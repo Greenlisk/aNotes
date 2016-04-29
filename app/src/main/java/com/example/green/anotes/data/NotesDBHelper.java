@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  * Created by green on 3/21/16.
  */
 public class NotesDBHelper extends SQLiteOpenHelper {
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 7;
 
     public NotesDBHelper(Context context) {
         super(context, NotesContract.NoteEntry.TABLE_NAME, null, DATABASE_VERSION);
@@ -20,6 +20,7 @@ public class NotesDBHelper extends SQLiteOpenHelper {
         String query = "CREATE TABLE IF NOT EXISTS " + NotesContract.NoteEntry.TABLE_NAME +
                 " ( " + NotesContract.NoteEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 NotesContract.NoteEntry.NOTE + " TEXT NOT NULL, " +
+                NotesContract.NoteEntry.DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 NotesContract.NoteEntry.REMOVED + " INTEGER DEFAULT 0 )";
         db.execSQL(query);
     }

@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:background="?attr/selectableItemBackground"
+    >
 
     <TextView
         android:layout_height="wrap_content"
-        android:layout_width="0dp"
-        android:id="@+id/note_field"
-        android:layout_weight="1"/>
+        android:layout_width="match_parent"
+        android:id="@+id/note_date"
+        android:padding="1dp"/>
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/note_text"
+        android:padding="5dp"
+        style="@style/NoteTextStyle"/>
 </LinearLayout>

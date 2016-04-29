@@ -5,18 +5,18 @@
     android:orientation="vertical"
     tools:context="com.example.green.anotes.ActiveNotesFragment">
 
-    <ListView
+    <android.support.v7.widget.RecyclerView
         android:layout_height="0dp"
         android:layout_width="match_parent"
         android:id="@+id/list_active_notes"
         android:layout_weight="1"
-        android:dividerHeight="5dp"
         />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        >
         <EditText
             android:layout_width="0dp"
             android:layout_weight="1"
@@ -26,6 +26,7 @@
             android:inputType="textMultiLine"
             android:imeOptions="flagNoExtractUi"
             android:background="@android:drawable/editbox_background_normal"
+            android:elevation="8dp"
             />
 
         <ImageButton
@@ -34,6 +35,7 @@
             android:id="@+id/save_button"
             android:src="@android:drawable/ic_menu_send"
             android:contentDescription="Send"
+            android:elevation="8dp"
             />
     </LinearLayout>
 </LinearLayout>

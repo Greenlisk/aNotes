@@ -8,6 +8,7 @@ import android.provider.BaseColumns;
 public class NotesContract {
     public static final class NoteEntry implements BaseColumns {
         public static final String TABLE_NAME = "notes";
+        public static final String DATE = "date";
         public static final String NOTE = "note";
         public static final String REMOVED = "removed";
     }
